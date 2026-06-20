@@ -185,7 +185,10 @@ function renderTimeline(data) {
                 <div class="card-content">
                     ${update.htmlContent}
                 </div>
-                <div class="card-footer">
+                <div class="card-footer" style="gap: 0.75rem;">
+                    <button class="btn btn-copy-card" data-id="${update.id}">
+                        <i class="fa-regular fa-copy"></i> Copy Note
+                    </button>
                     <button class="btn btn-tweet-card" data-id="${update.id}">
                         <i class="fa-brands fa-x-twitter"></i> Share Update
                     </button>
@@ -200,6 +203,12 @@ function renderTimeline(data) {
                 } else {
                     card.classList.remove('selected');
                 }
+            });
+            
+            // Add click listener to Copy button
+            const copyBtn = card.querySelector('.btn-copy-card');
+            copyBtn.addEventListener('click', () => {
+                copyUpdateToClipboard(entry.date, update, entry.link, copyBtn);
             });
             
             // Add click listener to Share button
@@ -309,6 +318,103 @@ filterTagsContainer.addEventListener('click', (e) => {
     currentFilter = btn.dataset.type;
     applyFiltersAndRender();
 });
+
+// Clipboard Helper
+async function copyUpdateToClipboard(date, update, link, button) {
+    const textToCopy = `[BigQuery Release Notes - ${date} - ${update.type}]\n\n${update.plainText}\n\nRead more details: ${link}`;
+    try {
+        await navigator.clipboard.writeText(textToCopy);
+        
+        // Show success visual feedback
+        const originalContent = button.innerHTML;
+        button.innerHTML = `<i class="fa-solid fa-check"></i> Copied!`;
+        button.classList.add('copied');
+        
+        setTimeout(() => {
+            button.innerHTML = originalContent;
+            button.classList.remove('copied');
+        }, 2000);
+    } catch (err) {
+        console.error('Clipboard copy failed:', err);
+    }
+}
+
+// CSV Export Helper
+function exportFeedToCSV() {
+    const csvRows = [];
+    // Header
+    csvRows.push(['Date', 'Type', 'Description', 'Link'].map(val => `"${val.replace(/"/g, '""')}"`).join(','));
+    
+    let count = 0;
+    releaseNotesData.forEach(entry => {
+        entry.updates.forEach(update => {
+            const matchesCategory = currentFilter === 'all' || 
+                update.type.toLowerCase() === currentFilter.toLowerCase();
+            
+            const matchesSearch = !searchQuery || 
+                update.plainText.toLowerCase().includes(searchQuery) ||
+                update.type.toLowerCase().includes(searchQuery) ||
+                entry.date.toLowerCase().includes(searchQuery);
+            
+            if (matchesCategory && matchesSearch) {
+                count++;
+                const date = entry.date;
+                const type = update.type;
+                const desc = update.plainText;
+                const link = entry.link;
+                
+                const row = [date, type, desc, link].map(val => {
+                    const escaped = val.replace(/"/g, '""');
+                    return `"${escaped}"`;
+                });
+                csvRows.push(row.join(','));
+            }
+        });
+    });
+    
+    if (count === 0) {
+        alert("No matching release notes to export.");
+        return;
+    }
+    
+    const csvString = csvRows.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `bigquery_release_notes_${currentFilter}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Theme Switcher Initialization
+const checkboxTheme = document.getElementById('checkbox-theme');
+const savedTheme = localStorage.getItem('theme') || 'dark';
+
+if (savedTheme === 'light') {
+    document.body.classList.add('light-mode');
+    checkboxTheme.checked = true;
+} else {
+    document.body.classList.remove('light-mode');
+    checkboxTheme.checked = false;
+}
+
+// Event Listeners
+checkboxTheme.addEventListener('change', (e) => {
+    if (e.target.checked) {
+        document.body.classList.add('light-mode');
+        localStorage.setItem('theme', 'light');
+    } else {
+        document.body.classList.remove('light-mode');
+        localStorage.setItem('theme', 'dark');
+    }
+});
+
+const btnExportCsv = document.getElementById('btn-export-csv');
+btnExportCsv.addEventListener('click', exportFeedToCSV);
 
 // Refresh Buttons
 btnRefresh.addEventListener('click', fetchReleaseNotes);

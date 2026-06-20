@@ -38,10 +38,24 @@
                     <span class="status-badge"><span class="pulse-dot"></span>Live Feed</span>
                 </div>
             </div>
-            <button id="btn-refresh" class="btn btn-refresh" aria-label="Refresh Release Notes">
-                <i class="fa-solid fa-rotate" id="refresh-icon"></i>
-                <span>Refresh Feed</span>
-            </button>
+            <div class="header-actions">
+                <div class="theme-switch-wrapper" title="Toggle Light/Dark Theme">
+                    <i class="fa-solid fa-moon moon-icon"></i>
+                    <label class="theme-switch" for="checkbox-theme">
+                        <input type="checkbox" id="checkbox-theme" aria-label="Toggle Light/Dark Theme">
+                        <span class="slider round"></span>
+                    </label>
+                    <i class="fa-solid fa-sun sun-icon"></i>
+                </div>
+                <button id="btn-export-csv" class="btn btn-refresh" aria-label="Export to CSV">
+                    <i class="fa-solid fa-file-csv"></i>
+                    <span>Export CSV</span>
+                </button>
+                <button id="btn-refresh" class="btn btn-refresh" aria-label="Refresh Release Notes">
+                    <i class="fa-solid fa-rotate" id="refresh-icon"></i>
+                    <span>Refresh Feed</span>
+                </button>
+            </div>
         </div>
     </header>
 
